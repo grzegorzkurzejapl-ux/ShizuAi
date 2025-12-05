@@ -1,8 +1,7 @@
 # ShizuAi
 
-Assistant Python en ligne de commande, capable de répondre à tes questions et d'utiliser DuckDuckGo pour un résumé rapide si Internet est disponible.
-Il fonctionne intégralement en console : tu peux le lancer directement ou générer un exécutable `.exe` avec PyInstaller.
-L'affichage utilise des nuances de gris et de rouge en dégradé dans le terminal (désactivables via `--no-color`).
+Assistant Python en ligne de commande, capable de répondre à tes questions et d'utiliser DuckDuckGo pour un résumé rapide si Internet est disponible. Aucune interface HTML n'est nécessaire : tu peux lancer ShizuAi en console ou générer un exécutable `.exe` avec PyInstaller. L'affichage utilise des nuances de gris et de rouge en dégradé dans le terminal (désactivables via `--no-color`).
+Assistant Python en ligne de commande, capable de répondre à tes questions et d'utiliser DuckDuckGo pour un résumé rapide si Internet est disponible. Aucune interface HTML n'est nécessaire : tu peux lancer ShizuAi en console ou générer un exécutable `.exe` avec PyInstaller.
 
 ## Installation rapide
 1. (Optionnel) crée un environnement virtuel Python.
@@ -13,6 +12,7 @@ L'affichage utilise des nuances de gris et de rouge en dégradé dans le termina
 
 ## Utilisation
 - Session interactive (par défaut, la recherche web est activée, couleurs gris/rouge actives) :
+- Session interactive (par défaut, la recherche web est activée) :
   ```bash
   python app.py
   ```
@@ -32,7 +32,6 @@ L'affichage utilise des nuances de gris et de rouge en dégradé dans le termina
   ```bash
   python app.py --timeout 6.5 "Résume la mission de l'ESA"
   ```
-  (une valeur minimale de 0,1s est imposée pour éviter les conflits de paramètres)
 
 ## Générer un exécutable Windows (.exe)
 1. Installe PyInstaller :
