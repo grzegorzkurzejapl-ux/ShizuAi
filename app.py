@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import requests
-from colorama import Fore, Style, init as colorama_init
 
 
 @dataclass
@@ -87,39 +86,8 @@ def answer_question(question: str, use_web: bool = True) -> Tuple[str, bool]:
     return offline_reply, False
 
 
-def stylize_gradient(text: str) -> str:
-    """Apply a simple gris/rouge dégradé across the characters."""
-
-    palette = [Fore.LIGHTBLACK_EX, Fore.RED, Fore.LIGHTRED_EX]
-    colored_chars = [palette[i % len(palette)] + ch for i, ch in enumerate(text)]
-    return "".join(colored_chars) + Style.RESET_ALL
-
-
-def banner(enabled: bool) -> None:
-    if not enabled:
-        print("ShizuAi")
-        return
-
-    title = stylize_gradient("ShizuAi")
-    subtitle = (
-        Fore.LIGHTBLACK_EX
-        + "Assistant Python (hors ligne + recherche web DuckDuckGo optionnelle)"
-        + Style.RESET_ALL
-    )
-    print(title)
-    print(subtitle)
-    print(Fore.LIGHTBLACK_EX + "Nuances de gris et de rouge activées." + Style.RESET_ALL)
-
-
-def color_prefix(label: str, enabled: bool, web: bool) -> str:
-    if not enabled:
-        return label
-    return (Fore.RED if web else Fore.LIGHTBLACK_EX) + label + Style.RESET_ALL
-
-
-def interactive_session(default_use_web: bool = True, use_color: bool = True) -> None:
-    banner(use_color)
-    print("Tape une question (ou vide pour quitter).")
+def interactive_session(default_use_web: bool = True) -> None:
+    print("ShizuAi est prête. Tape une question (ou vide pour quitter).")
     print(f"Recherche web activée par défaut : {'oui' if default_use_web else 'non'}.\n")
 
     while True:
@@ -134,10 +102,8 @@ def interactive_session(default_use_web: bool = True, use_color: bool = True) ->
             break
 
         reply, from_web = answer_question(question, use_web=default_use_web)
-        prefix = color_prefix("[Web]", use_color, web=from_web)
-        offline_prefix = color_prefix("[Offline]", use_color, web=False)
-        tag = prefix if from_web else offline_prefix
-        print(f"{tag} {reply}\n")
+        prefix = "[Web]" if from_web else "[Offline]"
+        print(f"{prefix} {reply}\n")
 
 
 def main() -> None:
@@ -152,26 +118,16 @@ def main() -> None:
         action="store_true",
         help="Désactiver la récupération de résumés web (hors ligne uniquement).",
     )
-    parser.add_argument(
-        "--no-color",
-        action="store_true",
-        help="Désactiver les couleurs gris/rouge dans le terminal.",
-    )
 
     args = parser.parse_args()
     use_web = not args.no_web
-    use_color = not args.no_color
-    colorama_init(autoreset=True)  # Sans try/catch pour respecter les consignes.
 
     if args.question:
         combined = " ".join(args.question)
-        reply, from_web = answer_question(combined, use_web=use_web)
-        prefix = color_prefix("[Web]", use_color, web=from_web)
-        offline_prefix = color_prefix("[Offline]", use_color, web=False)
-        tag = prefix if from_web else offline_prefix
-        print(f"{tag} {reply}")
+        reply, _ = answer_question(combined, use_web=use_web)
+        print(reply)
     else:
-        interactive_session(default_use_web=use_web, use_color=use_color)
+        interactive_session(default_use_web=use_web)
 
 
 if __name__ == "__main__":
