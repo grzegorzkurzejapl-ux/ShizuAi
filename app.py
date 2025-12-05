@@ -61,7 +61,8 @@ def fetch_web_summary(query: str, timeout: float = 4.0) -> Tuple[Optional[WebSum
         if isinstance(topic, dict) and topic.get("Text"):
             return WebSummary(snippet=topic["Text"], source=topic.get("FirstURL")), None
 
-    return None, "aucun résumé web trouvé"
+    # Aucun résumé web utile, mais ce n'est pas une erreur : on reste silencieux.
+    return None, None
 
 
 def craft_offline_response(question: str) -> str:
