@@ -25,16 +25,17 @@ class WebSummary:
     source: Optional[str] = None
 
 
-def fetch_web_summary(query: str, timeout: float = 4.0) -> Optional[WebSummary]:
+def fetch_web_summary(query: str, timeout: float = 4.0) -> Tuple[Optional[WebSummary], Optional[str]]:
     """
-    Récupère un résumé synthétique via l'API d'Instant Answer de DuckDuckGo.
+    Récupère un résumé via DuckDuckGo.
 
-    En cas d'échec réseau ou de réponse vide, on bascule silencieusement sur la réponse hors ligne.
+    Retourne également un message d'erreur explicite si l'accès réseau échoue, pour signaler
+    qu'on est repassé hors ligne.
     """
 
     query = query.strip()
     if not query:
-        return None
+        return None, None
 
     try:
         response = requests.get(
@@ -45,18 +46,22 @@ def fetch_web_summary(query: str, timeout: float = 4.0) -> Optional[WebSummary]:
         )
         response.raise_for_status()
         payload = response.json()
-    except (requests.RequestException, ValueError):
-        return None
+    except (requests.Timeout, requests.ConnectionError) as exc:
+        return None, f"réseau indisponible ({exc.__class__.__name__})"
+    except requests.RequestException as exc:
+        return None, f"requête web échouée ({exc.__class__.__name__})"
+    except ValueError:
+        return None, "réponse web illisible"
 
     snippet = payload.get("AbstractText")
     if snippet:
-        return WebSummary(snippet=snippet.strip(), source=payload.get("AbstractURL"))
+        return WebSummary(snippet=snippet.strip(), source=payload.get("AbstractURL")), None
 
     for topic in payload.get("RelatedTopics") or []:
         if isinstance(topic, dict) and topic.get("Text"):
-            return WebSummary(snippet=topic["Text"], source=topic.get("FirstURL"))
+            return WebSummary(snippet=topic["Text"], source=topic.get("FirstURL")), None
 
-    return None
+    return None, "aucun résumé web trouvé"
 
 
 def craft_offline_response(question: str) -> str:
@@ -83,7 +88,7 @@ def craft_offline_response(question: str) -> str:
 def answer_question(question: str, use_web: bool = True, timeout: float = 4.0) -> Tuple[str, bool]:
     """Construit la réponse finale et indique si une donnée web a été utilisée."""
 
-    web_summary = fetch_web_summary(question, timeout=timeout) if use_web else None
+    web_summary, web_error = fetch_web_summary(question, timeout=timeout) if use_web else (None, None)
     offline_reply = craft_offline_response(question)
 
     if web_summary:
@@ -96,6 +101,11 @@ def answer_question(question: str, use_web: bool = True, timeout: float = 4.0) -
             width=90,
         )
         return response, True
+
+    if web_error and use_web:
+        offline_reply = textwrap.fill(
+            f"{offline_reply}\n\nMode hors ligne : {web_error}.", width=90
+        )
 
     return offline_reply, False
 

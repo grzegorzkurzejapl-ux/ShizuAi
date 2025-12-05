@@ -47,5 +47,6 @@ L'affichage utilise des nuances de gris et de rouge en dégradé dans le termina
 
 ## Notes
 - Sans accès Internet, ShizuAi fonctionne en mode hors ligne avec des réponses prêtes à l'emploi.
+- Si l'accès web échoue (réseau bloqué, pas de résumé), un message l'indique et ShizuAi reste hors ligne.
 - La recherche web repose sur l'API publique de DuckDuckGo et ne nécessite pas de clé API.
 - Les couleurs utilisent uniquement des codes ANSI; sur un terminal qui ne les gère pas, lance ShizuAi avec `--no-color`.
