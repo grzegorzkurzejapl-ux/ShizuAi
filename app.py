@@ -30,28 +30,49 @@ def fetch_web_summary(query: str, timeout: float = 4.0) -> Tuple[Optional[WebSum
     Récupère un résumé via DuckDuckGo.
 
     Retourne également un message d'erreur explicite si l'accès réseau échoue, pour signaler
-    qu'on est repassé hors ligne.
+    qu'on est repassé hors ligne. Une requête de secours est effectuée sur le domaine
+    principal si l'API dédiée n'est pas joignable.
     """
+
+    def _call_endpoint(endpoint: str) -> Tuple[Optional[dict], Optional[str]]:
+        try:
+            response = requests.get(
+                endpoint,
+                params={
+                    "q": query,
+                    "format": "json",
+                    "no_html": 1,
+                    "skip_disambig": 1,
+                    "t": "ShizuAi",
+                },
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (compatible; ShizuAi/1.0; +https://github.com/)"
+                    )
+                },
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            return response.json(), None
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            return None, f"réseau indisponible ({exc.__class__.__name__})"
+        except requests.RequestException as exc:
+            return None, f"requête web échouée ({exc.__class__.__name__})"
+        except ValueError:
+            return None, "réponse web illisible"
 
     query = query.strip()
     if not query:
         return None, None
 
-    try:
-        response = requests.get(
-            "https://api.duckduckgo.com/",
-            params={"q": query, "format": "json", "no_html": 1, "skip_disambig": 1},
-            headers={"User-Agent": "ShizuAi/1.0 (+https://example.com)"},
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        payload = response.json()
-    except (requests.Timeout, requests.ConnectionError) as exc:
-        return None, f"réseau indisponible ({exc.__class__.__name__})"
-    except requests.RequestException as exc:
-        return None, f"requête web échouée ({exc.__class__.__name__})"
-    except ValueError:
-        return None, "réponse web illisible"
+    payload, error = _call_endpoint("https://api.duckduckgo.com/")
+    if error or payload is None:
+        # Tentative de secours via le domaine principal, pour les environnements où api. est bloqué.
+        payload, fallback_error = _call_endpoint("https://duckduckgo.com/")
+        error = fallback_error or error
+
+    if not payload:
+        return None, error
 
     snippet = payload.get("AbstractText")
     if snippet:
@@ -62,7 +83,7 @@ def fetch_web_summary(query: str, timeout: float = 4.0) -> Tuple[Optional[WebSum
             return WebSummary(snippet=topic["Text"], source=topic.get("FirstURL")), None
 
     # Aucun résumé web utile, mais ce n'est pas une erreur : on reste silencieux.
-    return None, None
+    return None, error
 
 
 def craft_offline_response(question: str) -> str:
