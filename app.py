@@ -72,6 +72,10 @@ def answer_question(question: str, use_web: bool = True, timeout: float = 4.0) -
     """Build the response text and indicate whether web data was used."""
 
     web_summary = fetch_web_summary(question, timeout=timeout) if use_web else None
+def answer_question(question: str, use_web: bool = True) -> Tuple[str, bool]:
+    """Build the response text and indicate whether web data was used."""
+
+    web_summary = fetch_web_summary(question) if use_web else None
     offline_reply = craft_offline_response(question)
 
     if web_summary:
@@ -127,6 +131,9 @@ def interactive_session(
         f"Recherche web activée par défaut : {'oui' if default_use_web else 'non'}; "
         f"délai web : {timeout:.1f}s.\n"
     )
+def interactive_session(default_use_web: bool = True) -> None:
+    print("ShizuAi est prête. Tape une question (ou vide pour quitter).")
+    print(f"Recherche web activée par défaut : {'oui' if default_use_web else 'non'}.\n")
 
     while True:
         try:
@@ -146,6 +153,9 @@ def interactive_session(
         offline_prefix = color_prefix("[Offline]", use_color, web=False)
         tag = prefix if from_web else offline_prefix
         print(f"{tag} {reply}\n")
+        reply, from_web = answer_question(question, use_web=default_use_web)
+        prefix = "[Web]" if from_web else "[Offline]"
+        print(f"{prefix} {reply}\n")
 
 
 def main() -> None:
@@ -189,6 +199,16 @@ def main() -> None:
         interactive_session(
             default_use_web=use_web, use_color=use_color, timeout=timeout
         )
+
+    args = parser.parse_args()
+    use_web = not args.no_web
+
+    if args.question:
+        combined = " ".join(args.question)
+        reply, _ = answer_question(combined, use_web=use_web)
+        print(reply)
+    else:
+        interactive_session(default_use_web=use_web)
 
 
 if __name__ == "__main__":
