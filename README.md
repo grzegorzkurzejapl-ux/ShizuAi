@@ -1,18 +1,18 @@
 # ShizuAi
 
-Assistant Python en ligne de commande, capable de répondre à tes questions et d'utiliser DuckDuckGo pour un résumé rapide si Internet est disponible. Aucune interface HTML n'est nécessaire : tu peux lancer ShizuAi en console ou générer un exécutable `.exe` avec PyInstaller. L'affichage utilise des nuances de gris et de rouge en dégradé dans le terminal (désactivables via `--no-color`).
-Assistant Python en ligne de commande, capable de répondre à tes questions et d'utiliser DuckDuckGo pour un résumé rapide si Internet est disponible. Aucune interface HTML n'est nécessaire : tu peux lancer ShizuAi en console ou générer un exécutable `.exe` avec PyInstaller.
+Assistant Python en ligne de commande, capable de répondre à tes questions et d'utiliser DuckDuckGo pour un résumé rapide si Internet est disponible.
+Il fonctionne intégralement en console : tu peux le lancer directement ou générer un exécutable `.exe` avec PyInstaller.
+L'affichage utilise des nuances de gris et de rouge en dégradé dans le terminal (désactivables via `--no-color`).
 
 ## Installation rapide
 1. (Optionnel) crée un environnement virtuel Python.
-2. Installe les dépendances :
+2. Installe la dépendance (uniquement `requests`) :
    ```bash
    pip install -r requirements.txt
    ```
 
 ## Utilisation
 - Session interactive (par défaut, la recherche web est activée, couleurs gris/rouge actives) :
-- Session interactive (par défaut, la recherche web est activée) :
   ```bash
   python app.py
   ```
@@ -32,6 +32,7 @@ Assistant Python en ligne de commande, capable de répondre à tes questions et 
   ```bash
   python app.py --timeout 6.5 "Résume la mission de l'ESA"
   ```
+  (une valeur minimale de 0,1s est imposée pour éviter les conflits de paramètres)
 
 ## Générer un exécutable Windows (.exe)
 1. Installe PyInstaller :
@@ -47,3 +48,4 @@ Assistant Python en ligne de commande, capable de répondre à tes questions et 
 ## Notes
 - Sans accès Internet, ShizuAi fonctionne en mode hors ligne avec des réponses prêtes à l'emploi.
 - La recherche web repose sur l'API publique de DuckDuckGo et ne nécessite pas de clé API.
+- Les couleurs utilisent uniquement des codes ANSI; sur un terminal qui ne les gère pas, lance ShizuAi avec `--no-color`.
