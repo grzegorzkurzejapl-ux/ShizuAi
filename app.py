@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import requests
+from colorama import Fore, Style, init as colorama_init
 
 
 @dataclass
@@ -27,6 +28,7 @@ def fetch_web_summary(query: str, timeout: float = 4.0) -> Optional[WebSummary]:
         response = requests.get(
             "https://api.duckduckgo.com/",
             params={"q": query, "format": "json", "no_html": 1, "skip_disambig": 1},
+            headers={"User-Agent": "ShizuAi/1.0 (+https://example.com)"},
             timeout=timeout,
         )
         response.raise_for_status()
@@ -66,6 +68,10 @@ def craft_offline_response(question: str) -> str:
     )
 
 
+def answer_question(question: str, use_web: bool = True, timeout: float = 4.0) -> Tuple[str, bool]:
+    """Build the response text and indicate whether web data was used."""
+
+    web_summary = fetch_web_summary(question, timeout=timeout) if use_web else None
 def answer_question(question: str, use_web: bool = True) -> Tuple[str, bool]:
     """Build the response text and indicate whether web data was used."""
 
@@ -86,6 +92,45 @@ def answer_question(question: str, use_web: bool = True) -> Tuple[str, bool]:
     return offline_reply, False
 
 
+def stylize_gradient(text: str) -> str:
+    """Apply a simple gris/rouge dégradé across the characters."""
+
+    palette = [Fore.LIGHTBLACK_EX, Fore.RED, Fore.LIGHTRED_EX]
+    colored_chars = [palette[i % len(palette)] + ch for i, ch in enumerate(text)]
+    return "".join(colored_chars) + Style.RESET_ALL
+
+
+def banner(enabled: bool) -> None:
+    if not enabled:
+        print("ShizuAi")
+        return
+
+    title = stylize_gradient("ShizuAi")
+    subtitle = (
+        Fore.LIGHTBLACK_EX
+        + "Assistant Python (hors ligne + recherche web DuckDuckGo optionnelle)"
+        + Style.RESET_ALL
+    )
+    print(title)
+    print(subtitle)
+    print(Fore.LIGHTBLACK_EX + "Nuances de gris et de rouge activées." + Style.RESET_ALL)
+
+
+def color_prefix(label: str, enabled: bool, web: bool) -> str:
+    if not enabled:
+        return label
+    return (Fore.RED if web else Fore.LIGHTBLACK_EX) + label + Style.RESET_ALL
+
+
+def interactive_session(
+    default_use_web: bool = True, use_color: bool = True, timeout: float = 4.0
+) -> None:
+    banner(use_color)
+    print("Tape une question (ou vide pour quitter).")
+    print(
+        f"Recherche web activée par défaut : {'oui' if default_use_web else 'non'}; "
+        f"délai web : {timeout:.1f}s.\n"
+    )
 def interactive_session(default_use_web: bool = True) -> None:
     print("ShizuAi est prête. Tape une question (ou vide pour quitter).")
     print(f"Recherche web activée par défaut : {'oui' if default_use_web else 'non'}.\n")
@@ -101,6 +146,13 @@ def interactive_session(default_use_web: bool = True) -> None:
             print("Session terminée. À bientôt !")
             break
 
+        reply, from_web = answer_question(
+            question, use_web=default_use_web, timeout=timeout
+        )
+        prefix = color_prefix("[Web]", use_color, web=from_web)
+        offline_prefix = color_prefix("[Offline]", use_color, web=False)
+        tag = prefix if from_web else offline_prefix
+        print(f"{tag} {reply}\n")
         reply, from_web = answer_question(question, use_web=default_use_web)
         prefix = "[Web]" if from_web else "[Offline]"
         print(f"{prefix} {reply}\n")
@@ -118,6 +170,35 @@ def main() -> None:
         action="store_true",
         help="Désactiver la récupération de résumés web (hors ligne uniquement).",
     )
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Désactiver les couleurs gris/rouge dans le terminal.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=4.0,
+        help="Délai maximal (en secondes) pour récupérer un résumé web.",
+    )
+
+    args = parser.parse_args()
+    use_web = not args.no_web
+    use_color = not args.no_color
+    timeout = max(args.timeout, 0.1)
+    colorama_init(autoreset=True)  # Sans try/catch pour respecter les consignes.
+
+    if args.question:
+        combined = " ".join(args.question)
+        reply, from_web = answer_question(combined, use_web=use_web, timeout=timeout)
+        prefix = color_prefix("[Web]", use_color, web=from_web)
+        offline_prefix = color_prefix("[Offline]", use_color, web=False)
+        tag = prefix if from_web else offline_prefix
+        print(f"{tag} {reply}")
+    else:
+        interactive_session(
+            default_use_web=use_web, use_color=use_color, timeout=timeout
+        )
 
     args = parser.parse_args()
     use_web = not args.no_web
